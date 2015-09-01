@@ -1,3 +1,6 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
 import StringIO
 import json
 import logging
@@ -63,6 +66,29 @@ class SetWebhookHandler(webapp2.RequestHandler):
 
 
 class WebhookHandler(webapp2.RequestHandler):
+
+    def GetPodcastDescription(self, number):
+        response = urllib2.urlopen('http://www.radio-t.com/archives/')
+        html = response.read()
+        ind = html.find("podcast-" + number + "/")
+        if ind>0:
+            podcastUrl = html[ind-14:ind+8 + len(number)]
+            response = urllib2.urlopen("http://www.radio-t.com" + podcastUrl)
+            html = response.read().split("<ul>")[1].split("</ul>")[0].decode('utf-8').replace("<li>","").replace("</li>","")
+            return html
+        else:
+            return "<h1>Error</h1>"
+    
+    def GetPodcast(self, command):
+        number = command.replace("/get","").strip()
+        try:
+            title = u"Радио-Т " + number
+            url = "http://cdn.radio-t.com/rt_podcast" + number + ".mp3"
+            desc = self.GetPodcastDescription(str(number))
+            return title + "\n" + desc +  "\n" + url
+        except Exception:
+            return "Not found :("    
+
     def post(self):
         urlfetch.set_default_fetch_deadline(60)
         body = json.loads(self.request.body)
@@ -107,10 +133,9 @@ class WebhookHandler(webapp2.RequestHandler):
 
         if text.startswith('/'):
             if text == '/start':
-                reply('Bot enabled')
+                reply(u"Радио-Т - это еженедельный HiTech подкаст на русском языке. \n\n Авторы и приглашенные гости импровизируют на околокомпьютерные темы. Как правило, не залезая в глубокие дебри, однако иногда нас заносит ;) \n\n Для получения записей подкаста:\n /get {номер подкаста} \n\n" )
                 setEnabled(chat_id, True)
             elif text == '/stop':
-                reply('Bot disabled')
                 setEnabled(chat_id, False)
             elif text == '/image':
                 img = Image.new('RGB', (512, 512))
@@ -120,31 +145,13 @@ class WebhookHandler(webapp2.RequestHandler):
                 output = StringIO.StringIO()
                 img.save(output, 'JPEG')
                 reply(img=output.getvalue())
-            else:
-                reply('What command?')
+            elif 'get' in text:
+                reply(self.GetPodcast(text))
 
         # CUSTOMIZE FROM HERE
 
-        elif 'who are you' in text:
-            reply('telebot starter kit, created by yukuku: https://github.com/yukuku/telebot')
         elif 'what time' in text:
             reply('look at the top-right corner of your screen!')
-        else:
-            if getEnabled(chat_id):
-                try:
-                    resp1 = json.load(urllib2.urlopen('http://www.simsimi.com/requestChat?lc=en&ft=1.0&req=' + urllib.quote_plus(text.encode('utf-8'))))
-                    back = resp1.get('res')
-                except urllib2.HTTPError, err:
-                    logging.error(err)
-                    back = str(err)
-                if not back:
-                    reply('okay...')
-                elif 'I HAVE NO RESPONSE' in back:
-                    reply('you said something with no meaning')
-                else:
-                    reply(back)
-            else:
-                logging.info('not enabled for chat_id {}'.format(chat_id))
 
 
 app = webapp2.WSGIApplication([
