@@ -7,6 +7,7 @@ import logging
 import random
 import urllib
 import urllib2
+import re
 
 # for sending images
 from PIL import Image
@@ -75,17 +76,20 @@ class WebhookHandler(webapp2.RequestHandler):
             podcastUrl = html[ind-14:ind+8 + len(number)]
             response = urllib2.urlopen("http://www.radio-t.com" + podcastUrl)
             html = response.read().split("<ul>")[1].split("</ul>")[0].decode('utf-8').replace("<li>","").replace("</li>","")
-            return html
+            return re.sub(r'<.*?>','', html)
         else:
-            return "<h1>Error</h1>"
+            return ""
     
     def GetPodcast(self, command):
         number = command.replace("/get","").strip()
         try:
             title = u"Радио-Т " + number
-            url = "http://cdn.radio-t.com/rt_podcast" + number + ".mp3"
+            url = u"Запись подкаста: \nhttp://cdn.radio-t.com/rt_podcast" + number + ".mp3"
             desc = self.GetPodcastDescription(str(number))
-            return title + "\n" + desc +  "\n" + url
+            if desc != "":
+                return title + "\n" + desc +  "\n" + url
+            else:
+                return "Not found :("
         except Exception:
             return "Not found :("    
 
@@ -132,26 +136,16 @@ class WebhookHandler(webapp2.RequestHandler):
             logging.info(resp)
 
         if text.startswith('/'):
+            help = u"Радио-Т - это еженедельный HiTech подкаст на русском языке. \n\n Авторы и приглашенные гости импровизируют на околокомпьютерные темы. Как правило, не залезая в глубокие дебри, однако иногда нас заносит ;) \n\n Для получения записей подкаста:\n /get {номер подкаста} \n\n"
             if text == '/start':
-                reply(u"Радио-Т - это еженедельный HiTech подкаст на русском языке. \n\n Авторы и приглашенные гости импровизируют на околокомпьютерные темы. Как правило, не залезая в глубокие дебри, однако иногда нас заносит ;) \n\n Для получения записей подкаста:\n /get {номер подкаста} \n\n" )
+                reply(help)
                 setEnabled(chat_id, True)
             elif text == '/stop':
                 setEnabled(chat_id, False)
-            elif text == '/image':
-                img = Image.new('RGB', (512, 512))
-                base = random.randint(0, 16777216)
-                pixels = [base+i*j for i in range(512) for j in range(512)]  # generate sample image
-                img.putdata(pixels)
-                output = StringIO.StringIO()
-                img.save(output, 'JPEG')
-                reply(img=output.getvalue())
+            elif text == '/help':
+                reply(help)
             elif 'get' in text:
                 reply(self.GetPodcast(text))
-
-        # CUSTOMIZE FROM HERE
-
-        elif 'what time' in text:
-            reply('look at the top-right corner of your screen!')
 
 
 app = webapp2.WSGIApplication([
