@@ -79,6 +79,13 @@ class WebhookHandler(webapp2.RequestHandler):
             return re.sub(r'<.*?>','', html)
         else:
             return ""
+
+    def GetLatest(self):
+        response = urllib2.urlopen('http://www.radio-t.com')
+        html = response.read()
+        ind = html.find("http://cdn.radio-t.com/rt_podcast")
+        number = html[ind+33:ind+36]
+        return self.GetPodcast("/get " + number)
     
     def GetPodcast(self, command):
         number = command.replace("/get","").strip()
@@ -136,7 +143,7 @@ class WebhookHandler(webapp2.RequestHandler):
             logging.info(resp)
 
         if text.startswith('/'):
-            help = u"Радио-Т - это еженедельный HiTech подкаст на русском языке. \n\n Авторы и приглашенные гости импровизируют на околокомпьютерные темы. Как правило, не залезая в глубокие дебри, однако иногда нас заносит ;) \n\n Для получения записей подкаста:\n /get {номер подкаста} \n\n"
+            help = u"Радио-Т - это еженедельный HiTech подкаст на русском языке. \n\n Авторы и приглашенные гости импровизируют на околокомпьютерные темы. Как правило, не залезая в глубокие дебри, однако иногда нас заносит ;) \n\n Вся необходимая информация: \n /help \n\n Для получения записей подкаста:\n /get {номер подкаста} \n\n Для получения последнего подкаста:\n /latest"
             if text == '/start':
                 reply(help)
                 setEnabled(chat_id, True)
@@ -146,6 +153,8 @@ class WebhookHandler(webapp2.RequestHandler):
                 reply(help)
             elif 'get' in text:
                 reply(self.GetPodcast(text))
+            elif text == '/latest':
+                reply(self.GetLatest())
 
 
 app = webapp2.WSGIApplication([
