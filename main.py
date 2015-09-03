@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 import StringIO
@@ -17,6 +16,9 @@ import multipart
 from google.appengine.api import urlfetch
 from google.appengine.ext import ndb
 import webapp2
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 TOKEN = '112350249:AAFCcMtHwQ4Ft6VlJqjI8sOD3masB3CFauc'
 
@@ -98,7 +100,27 @@ class WebhookHandler(webapp2.RequestHandler):
             else:
                 return "Not found :("
         except Exception:
-            return "Not found :("    
+            return "Not found :("   
+
+    def FindPodcasts(self,command):
+        text = command.replace("/find ","")
+        response = urllib2.urlopen('http://radiotbot-1055.appspot.com/podcasts.txt')
+        html = response.read()
+        strings = html.split(":::: - ");
+        index = len(strings) - 1;
+        test = ""
+        try:
+            while index > 0:
+                if text in strings[index]:
+                    title = u"Радио-Т " + str(index+6)
+                    url = u"Запись подкаста: \nhttp://cdn.radio-t.com/rt_podcast" + str(index+6) + ".mp3"
+                    desc = strings[index].replace(";","\n")
+                    return title + "\n" + desc +  "\n" + url
+                index = index - 1
+        except Exception as ex:
+            return "Error!" + str(ex)
+        return "Not found :("
+
 
     def post(self):
         urlfetch.set_default_fetch_deadline(60)
@@ -155,6 +177,8 @@ class WebhookHandler(webapp2.RequestHandler):
                 reply(self.GetPodcast(text))
             elif text == '/latest':
                 reply(self.GetLatest())
+            elif 'find' in text:
+                reply(self.FindPodcasts(text))
 
 
 app = webapp2.WSGIApplication([

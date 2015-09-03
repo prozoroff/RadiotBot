@@ -9,6 +9,10 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
+- url: /podcasts\.txt
+  static_files: podcasts.txt
+  upload: podcasts\.txt
+
 - url: /set_webhook
   login: admin
   script: main.app
