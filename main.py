@@ -82,6 +82,21 @@ class WebhookHandler(webapp2.RequestHandler):
         else:
             return ""
 
+    def GetPodcastDescription2(self, number):
+        response = urllib2.urlopen('http://radiotbot-1055.appspot.com/podcasts.txt')
+        html = response.read()
+        strings = html.split("<pod>")
+        index = len(strings) - 1;
+        try:
+            while index > 0:
+                if number == re.search('<num>(.*)</num>', strings[index]).group(1):
+                    desc = re.search('<desc>(.*)</desc>', strings[index]).group(1).replace(";","\n")
+                    return desc
+                index = index - 1
+        except Exception as ex:
+            return "Error: " + str(ex)
+        return ""
+
     def GetLatest(self):
         response = urllib2.urlopen('http://www.radio-t.com')
         html = response.read()
@@ -94,7 +109,7 @@ class WebhookHandler(webapp2.RequestHandler):
         try:
             title = u"Радио-Т " + number
             url = u"Запись подкаста: \nhttp://cdn.radio-t.com/rt_podcast" + number + ".mp3"
-            desc = self.GetPodcastDescription(str(number))
+            desc = self.GetPodcastDescription2(str(number))
             if desc != "":
                 return title + "\n" + desc +  "\n" + url
             else:
@@ -106,16 +121,22 @@ class WebhookHandler(webapp2.RequestHandler):
         text = command.replace("/find ","")
         response = urllib2.urlopen('http://radiotbot-1055.appspot.com/podcasts.txt')
         html = response.read()
-        strings = html.split(":::: - ");
+        strings = html.split("<pod>")
         index = len(strings) - 1;
-        test = ""
+        result = u"Последние подкасты по запросу: " + text + "\n --------------------------- \n"
+        counter = 0
         try:
             while index > 0:
                 if text in strings[index]:
-                    title = u"Радио-Т " + str(index+6)
-                    url = u"Запись подкаста: \nhttp://cdn.radio-t.com/rt_podcast" + str(index+6) + ".mp3"
-                    desc = strings[index].replace(";","\n")
-                    return title + "\n" + desc +  "\n" + url
+                    title = u"Радио-Т " + re.search('<num>(.*)</num>', strings[index]).group(1)
+                    url = u"Запись подкаста: \nhttp://cdn.radio-t.com/rt_podcast" + re.search('<num>(.*)</num>', strings[index]).group(1) + ".mp3"
+                    desc = re.search('<desc>(.*)</desc>', strings[index]).group(1).replace(";","\n")
+                    result = result + title + "\n" + desc +  "\n" + url
+                    counter = counter + 1
+                    if counter > 2:
+                        return result
+                    else:
+                        result = result + "\n --------------------------- \n"
                 index = index - 1
         except Exception as ex:
             return "Error!" + str(ex)
