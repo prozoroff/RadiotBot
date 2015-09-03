@@ -127,7 +127,7 @@ class WebhookHandler(webapp2.RequestHandler):
         counter = 0
         try:
             while index > 0:
-                if text in strings[index]:
+                if text.lower() in strings[index].lower():
                     title = u"Радио-Т " + re.search('<num>(.*)</num>', strings[index]).group(1)
                     url = u"Запись подкаста: \nhttp://cdn.radio-t.com/rt_podcast" + re.search('<num>(.*)</num>', strings[index]).group(1) + ".mp3"
                     desc = re.search('<desc>(.*)</desc>', strings[index]).group(1).replace(";","\n")
@@ -186,7 +186,7 @@ class WebhookHandler(webapp2.RequestHandler):
             logging.info(resp)
 
         if text.startswith('/'):
-            help = u"Радио-Т - это еженедельный HiTech подкаст на русском языке. \n\n Авторы и приглашенные гости импровизируют на околокомпьютерные темы. Как правило, не залезая в глубокие дебри, однако иногда нас заносит ;) \n\n Вся необходимая информация: \n /help \n\n Для получения записей подкаста:\n /get {номер подкаста} \n\n Для получения последнего подкаста:\n /latest"
+            help = u"Радио-Т - это еженедельный HiTech подкаст на русском языке. \n\n Авторы и приглашенные гости импровизируют на околокомпьютерные темы. Как правило, не залезая в глубокие дебри, однако иногда нас заносит ;) \n\n Вся необходимая информация: \n /help \n Для получения записей подкаста:\n /get {номер подкаста} \n Для получения последнего подкаста:\n /latest \n Поиск подкастов по тегу:\n /find {тег}"
             if text == '/start':
                 reply(help)
                 setEnabled(chat_id, True)
